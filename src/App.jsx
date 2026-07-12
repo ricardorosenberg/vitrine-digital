@@ -27,7 +27,10 @@ export default function App() {
               onToggleAdmin={handleToggleAdmin}
             />
           ) : (
-            <Header onCartClick={() => setShowCart(!showCart)} />
+            <Header 
+              onCartClick={() => setShowCart(!showCart)}
+              onAdminClick={handleToggleAdmin}
+            />
           )}
 
           <main className="max-w-7xl mx-auto px-4 py-12">
