@@ -17,6 +17,7 @@ const PainelVendedor = ({ onProdutoAdicionado }) => {
   const [previewFotos, setPreviewFotos] = useState([]);
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -47,20 +48,33 @@ const PainelVendedor = ({ onProdutoAdicionado }) => {
   };
 
   const handleFotoChange = (e) => {
-    const files = Array.from(e.target.files);
-    
-    files.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setPreviewFotos(prev => [...prev, event.target.result]);
-      };
-      reader.readAsDataURL(file);
+    const novosArquivos = Array.from(e.target.files);
+    const vagas = 5 - previewFotos.length;
+    const arquivosParaAdicionar = novosArquivos.slice(0, vagas);
+
+    if (arquivosParaAdicionar.length === 0) {
+      e.target.value = '';
+      return;
+    }
+
+    const leituras = arquivosParaAdicionar.map(file =>
+      new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onload = (event) => resolve(event.target.result);
+        reader.readAsDataURL(file);
+      })
+    );
+
+    Promise.all(leituras).then(resultados => {
+      setPreviewFotos(prev => [...prev, ...resultados].slice(0, 5));
     });
 
     setFormData(prev => ({
       ...prev,
-      fotos: [...prev.fotos, ...files]
+      fotos: [...prev.fotos, ...arquivosParaAdicionar]
     }));
+
+    e.target.value = '';
   };
 
   const removerFoto = (index) => {
@@ -297,9 +311,19 @@ const PainelVendedor = ({ onProdutoAdicionado }) => {
         />
 
         <div className="upload-fotos">
-          <label htmlFor="foto-input" className="label-upload">
+          <label className="label-upload">
             📸 Adicionar Fotos (máximo 5)
           </label>
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={handleFotoChange}
+            disabled={previewFotos.length >= 5}
+            aria-hidden="true"
+            style={{ display: 'none' }}
+          />
           <input
             id="foto-input"
             ref={fileInputRef}
@@ -308,16 +332,27 @@ const PainelVendedor = ({ onProdutoAdicionado }) => {
             accept="image/*"
             onChange={handleFotoChange}
             disabled={previewFotos.length >= 5}
+            aria-hidden="true"
             style={{ display: 'none' }}
           />
-          <button
-            type="button"
-            onClick={() => fileInputRef.current.click()}
-            className="btn-upload"
-            disabled={previewFotos.length >= 5}
-          >
-            + Selecionar Fotos
-          </button>
+          <div className="upload-botoes">
+            <button
+              type="button"
+              onClick={() => cameraInputRef.current.click()}
+              className="btn-upload"
+              disabled={previewFotos.length >= 5}
+            >
+              📷 Tirar Foto
+            </button>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current.click()}
+              className="btn-upload"
+              disabled={previewFotos.length >= 5}
+            >
+              🖼️ Galeria
+            </button>
+          </div>
         </div>
 
         {previewFotos.length > 0 && (
@@ -425,6 +460,13 @@ const PainelVendedor = ({ onProdutoAdicionado }) => {
           cursor: pointer;
           font-size: 14px;
           transition: background 0.3s;
+          flex: 1;
+        }
+
+        .upload-botoes {
+          display: flex;
+          gap: 10px;
+          justify-content: center;
         }
 
         .btn-upload:hover:not(:disabled) {
