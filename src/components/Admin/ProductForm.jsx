@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Plus, X, Image } from 'lucide-react'
+
+const MAX_PHOTOS = 5
 
 export default function ProductForm({ onSubmit, initialData = null, onCancel }) {
   const [formData, setFormData] = useState(
@@ -12,6 +14,9 @@ export default function ProductForm({ onSubmit, initialData = null, onCancel }) 
   )
 
   const [previewImages, setPreviewImages] = useState(initialData?.images || [''])
+
+  const cameraInputRef = useRef(null)
+  const galleryInputRef = useRef(null)
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -32,16 +37,57 @@ export default function ProductForm({ onSubmit, initialData = null, onCancel }) 
   }
 
   const addImageField = () => {
+    if (previewImages.length >= MAX_PHOTOS) {
+      alert(`Máximo de ${MAX_PHOTOS} fotos permitido`)
+      return
+    }
     setPreviewImages([...previewImages, ''])
   }
 
   const removeImageField = (index) => {
     const newImages = previewImages.filter((_, i) => i !== index)
-    setPreviewImages(newImages)
+    setPreviewImages(newImages.length > 0 ? newImages : [''])
     setFormData(prev => ({
       ...prev,
       images: newImages.filter(img => img.trim() !== '')
     }))
+  }
+
+  const isBase64Image = (image) => image.startsWith('data:')
+
+  const convertFileToBase64 = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result)
+      reader.onerror = () => reject(new Error(`Erro ao ler o arquivo: ${file.name}`))
+      reader.readAsDataURL(file)
+    })
+
+  const handleFilesSelected = async (files) => {
+    const currentFilled = previewImages.filter(img => img.trim() !== '').length
+    const available = MAX_PHOTOS - currentFilled
+    if (available <= 0) {
+      alert(`Máximo de ${MAX_PHOTOS} fotos já atingido`)
+      return
+    }
+
+    const filesToProcess = Array.from(files).slice(0, available)
+
+    try {
+      const dataUrls = await Promise.all(filesToProcess.map(convertFileToBase64))
+
+      setPreviewImages(prev => {
+        const withoutEmpty = prev.filter(img => img.trim() !== '')
+        return [...withoutEmpty, ...dataUrls]
+      })
+      setFormData(prev => {
+        const withoutEmpty = previewImages.filter(img => img.trim() !== '')
+        return { ...prev, images: [...withoutEmpty, ...dataUrls] }
+      })
+    } catch (err) {
+      console.error(err)
+      alert('Erro ao processar as imagens. Tente novamente.')
+    }
   }
 
   const handleSubmit = (e) => {
@@ -54,6 +100,9 @@ export default function ProductForm({ onSubmit, initialData = null, onCancel }) 
 
     onSubmit(formData)
   }
+
+  const totalFilled = previewImages.filter(img => img.trim() !== '').length
+  const atLimit = totalFilled >= MAX_PHOTOS
 
   return (
     <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-8 space-y-6">
@@ -103,21 +152,68 @@ export default function ProductForm({ onSubmit, initialData = null, onCancel }) 
 
       <div>
         <label className="block text-sm font-semibold text-apple-dark mb-2">
-          Fotos do Produto *
+          Fotos do Produto * <span className="text-gray-400 font-normal">({totalFilled}/{MAX_PHOTOS})</span>
         </label>
-        <p className="text-xs text-gray-500 mb-4">
-          Cole a URL da imagem (ex: https://exemplo.com/foto.jpg)
+        <p className="text-xs text-gray-500 mb-3">
+          Tire uma foto, selecione da galeria ou cole a URL da imagem
         </p>
+
+        {/* Camera / Gallery buttons */}
+        <div className="flex gap-2 mb-4">
+          <button
+            type="button"
+            disabled={atLimit}
+            onClick={() => cameraInputRef.current?.click()}
+            className="flex items-center gap-2 px-4 py-2 bg-apple-dark text-white rounded-lg hover:bg-apple-dark/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            📷 Tirar Foto
+          </button>
+          <button
+            type="button"
+            disabled={atLimit}
+            onClick={() => galleryInputRef.current?.click()}
+            className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-apple-dark rounded-lg hover:bg-apple-gray transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            🖼️ Galeria
+          </button>
+
+          {/* Hidden: camera capture */}
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={(e) => {
+              if (e.target.files?.length) handleFilesSelected(e.target.files)
+              e.target.value = ''
+            }}
+          />
+
+          {/* Hidden: gallery picker (multiple) */}
+          <input
+            ref={galleryInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={(e) => {
+              if (e.target.files?.length) handleFilesSelected(e.target.files)
+              e.target.value = ''
+            }}
+          />
+        </div>
 
         <div className="space-y-3">
           {previewImages.map((image, index) => (
             <div key={index} className="space-y-2">
               <div className="flex gap-2">
                 <input
-                  type="url"
-                  value={image}
+                  type="text"
+                  value={isBase64Image(image) ? '' : image}
                   onChange={(e) => handleImageChange(index, e.target.value)}
                   placeholder="https://exemplo.com/foto.jpg"
+                  readOnly={isBase64Image(image)}
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-apple-dark"
                 />
                 {previewImages.length > 1 && (
@@ -143,7 +239,7 @@ export default function ProductForm({ onSubmit, initialData = null, onCancel }) 
                     }}
                   />
                   <span className="text-xs text-gray-500 truncate flex-1">
-                    {image}
+                    {isBase64Image(image) ? '📷 Foto capturada' : image}
                   </span>
                 </div>
               )}
@@ -151,14 +247,16 @@ export default function ProductForm({ onSubmit, initialData = null, onCancel }) 
           ))}
         </div>
 
-        <button
-          type="button"
-          onClick={addImageField}
-          className="mt-4 flex items-center gap-2 px-4 py-2 text-apple-dark border border-gray-300 rounded-lg hover:bg-apple-gray transition-colors"
-        >
-          <Plus size={16} />
-          Adicionar outra foto
-        </button>
+        {!atLimit && (
+          <button
+            type="button"
+            onClick={addImageField}
+            className="mt-4 flex items-center gap-2 px-4 py-2 text-apple-dark border border-gray-300 rounded-lg hover:bg-apple-gray transition-colors"
+          >
+            <Plus size={16} />
+            Adicionar URL de foto
+          </button>
+        )}
       </div>
 
       <div className="flex gap-3 pt-4">
