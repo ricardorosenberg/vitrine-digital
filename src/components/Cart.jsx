@@ -8,7 +8,7 @@ export default function Cart({ onClose }) {
 
   const handleCheckout = () => {
     const message = generateWhatsAppMessage(cartItems, totalPrice)
-    const whatsappUrl = `https://wa.me/SEUCELULARAQUI?text=${encodeURIComponent(message)}`
+    const whatsappUrl = `https://wa.me/5511999281888?text=${encodeURIComponent(message)}`
     window.open(whatsappUrl, '_blank')
   }
 
@@ -103,7 +103,7 @@ export default function Cart({ onClose }) {
             {/* Botão Comprar via WhatsApp */}
             <button
               onClick={handleCheckout}
-              className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-4 rounded-xl transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center gap-3"
+              className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-4 rounded-xl transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
             >
               <MessageCircle size={20} />
               <span>Comprar no WhatsApp</span>
