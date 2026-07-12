@@ -4,15 +4,22 @@ import AdminDashboard from './components/Admin/AdminDashboard'
 import Header from './components/Header'
 import ProductGrid from './components/ProductGrid'
 import Cart from './components/Cart'
+import PasswordModal from './components/PasswordModal'
 import { CartProvider } from './context/CartContext'
 import { AdminProvider } from './context/AdminContext'
 
 export default function App() {
   const [showCart, setShowCart] = useState(false)
   const [adminMode, setAdminMode] = useState(false)
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
 
-  const handleToggleAdmin = () => {
-    setAdminMode(!adminMode)
+  const handleAdminClick = () => {
+    setShowPasswordModal(true)
+  }
+
+  const handlePasswordConfirm = () => {
+    setShowPasswordModal(false)
+    setAdminMode(true)
     setShowCart(false)
   }
 
@@ -24,12 +31,12 @@ export default function App() {
             <AdminHeader
               onBack={() => setAdminMode(false)}
               adminMode={adminMode}
-              onToggleAdmin={handleToggleAdmin}
+              onToggleAdmin={() => setAdminMode(false)}
             />
           ) : (
             <Header 
               onCartClick={() => setShowCart(!showCart)}
-              onAdminClick={handleToggleAdmin}
+              onAdminClick={handleAdminClick}
             />
           )}
 
@@ -42,6 +49,13 @@ export default function App() {
               <ProductGrid />
             )}
           </main>
+
+          {showPasswordModal && (
+            <PasswordModal
+              onConfirm={handlePasswordConfirm}
+              onClose={() => setShowPasswordModal(false)}
+            />
+          )}
         </div>
       </CartProvider>
     </AdminProvider>
