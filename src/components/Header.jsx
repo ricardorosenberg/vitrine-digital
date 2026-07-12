@@ -1,7 +1,7 @@
-import { ShoppingBag } from 'lucide-react'
+import { ShoppingBag, Settings } from 'lucide-react'
 import { useCart } from '../context/CartContext'
 
-export default function Header({ onCartClick }) {
+export default function Header({ onCartClick, onAdminClick }) {
   const { getTotalItems } = useCart()
   const totalItems = getTotalItems()
 
@@ -12,17 +12,27 @@ export default function Header({ onCartClick }) {
           Vitrine Digital
         </h1>
         
-        <button
-          onClick={onCartClick}
-          className="relative p-2 hover:bg-apple-gray rounded-full transition-colors"
-        >
-          <ShoppingBag size={24} className="text-apple-dark" />
-          {totalItems > 0 && (
-            <span className="absolute top-0 right-0 bg-red-500 text-white text-xs font-semibold rounded-full w-5 h-5 flex items-center justify-center">
-              {totalItems}
-            </span>
-          )}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onAdminClick}
+            className="p-2 hover:bg-apple-gray rounded-full transition-colors"
+            title="Painel Admin"
+          >
+            <Settings size={24} className="text-apple-dark" />
+          </button>
+          
+          <button
+            onClick={onCartClick}
+            className="relative p-2 hover:bg-apple-gray rounded-full transition-colors"
+          >
+            <ShoppingBag size={24} className="text-apple-dark" />
+            {totalItems > 0 && (
+              <span className="absolute top-0 right-0 bg-red-500 text-white text-xs font-semibold rounded-full w-5 h-5 flex items-center justify-center">
+                {totalItems}
+              </span>
+            )}
+          </button>
+        </div>
       </div>
     </header>
   )
