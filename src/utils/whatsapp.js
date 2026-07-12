@@ -11,7 +11,7 @@ export function generateWhatsAppMessage(cartItems, totalPrice) {
   })
 
   message += '─────────────────────\n'
-  message += `*TOTAL: R$ ${totalPrice.toFixed(2).replace('.', ','')}*\n\n`
+  message += `*TOTAL: R$ ${totalPrice.toFixed(2).replace('.', ',')}\n\n`
   message += 'Obrigado pela compra! 🙏'
 
   return message
